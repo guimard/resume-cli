@@ -1,0 +1,19 @@
+{
+  "include": ["./src"],
+  "exclude": ["./node_modules"],
+  "compilerOptions": {
+    "strict": true,
+    "module": "ESNext",
+    "target": "ES2020",
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "lib": ["esnext"],
+    "outDir": "./build",
+    "declarationDir": "./build",
+    "rootDir": "./src",
+    "sourceMap": true,
+    "noEmitOnError": true,
+    "declaration": true
+  }
+}

@@ -10,10 +10,9 @@ This is the command line tool for [JSON Resume](https://jsonresume.org), the ope
 
 [Read more...](https://jsonresume.org/schema/)
 
-
 Alternatives: The Resume CLI tool works as it is so there isn't a huge amount of active development on it, try these alternatives if it doesn't work for you;
-- [Resumed](https://github.com/rbardini/resumed)
 
+- [Resumed](https://github.com/rbardini/resumed)
 
 # Getting Started
 
@@ -77,7 +76,7 @@ When developing themes, simply change into your theme directory and run `resume 
 # supported resume input types
 
 - [`json`](https://www.json.org/json-en.html): via `JSON.parse`.
-- [`yaml`](https://yaml.org/): via [`yaml-js`](https://www.npmjs.com/package/yaml-js)
+- [`yaml`](https://yaml.org/): via [`js-yaml`](https://www.npmjs.com/package/js-yaml)
 - `quaff`: if `--resume` is a directory, then the path is passed to [`quaff`](https://www.npmjs.com/package/quaff) and the resulting json is used as the resume. quaff supports a variety of formats in the directory, including javascript modules.
 
 # resume data

@@ -1,17 +1,16 @@
-import { promisify } from 'util';
 import fs from 'fs';
 import chalk from 'chalk';
 import yesno from 'yesno';
 import { set } from 'object-path-immutable';
-import exists from 'file-exists';
-import readCB from 'read';
+import read from 'read';
+import require from './require';
 
-const writeFile = promisify(fs.writeFile);
-const read = promisify(readCB);
-const resume = require('resume-schema/sample.resume.json');
+interface InitArgs {
+  resumePath: string;
+}
 
-export default async ({ resumePath }) => {
-  if (await exists(resumePath)) {
+const init = async ({ resumePath }: InitArgs): Promise<void> => {
+  if (fs.existsSync(resumePath)) {
     console.log(
       chalk.yellow('There is already a resume.json file in this directory.'),
     );
@@ -26,18 +25,32 @@ export default async ({ resumePath }) => {
   console.log('All fields are optional.\n');
   console.log('Press ^C at any time to quit.');
 
-  const name = await read({
-    prompt: 'name: ',
-  });
-  const email = await read({
-    prompt: 'email: ',
-  });
+  // eslint-disable-next-line @typescript-eslint/await-thenable, @typescript-eslint/no-confusing-void-expression
+  const name = await read(
+    {
+      prompt: 'name: ',
+    },
+    () => {},
+  );
+  // eslint-disable-next-line @typescript-eslint/await-thenable, @typescript-eslint/no-confusing-void-expression
+  const email = await read(
+    {
+      prompt: 'email: ',
+    },
+    () => {},
+  );
 
   const personalizedResume = Object.entries({
     name,
     email,
-  }).reduce((acc, [key, value]) => set(acc, `basics.${key}`, value), resume);
-  await writeFile(resumePath, JSON.stringify(personalizedResume, undefined, 2));
+  }).reduce(
+    (acc, [key, value]) => set(acc, `basics.${key}`, value),
+    require('resume-schema/sample.resume.json'),
+  );
+  fs.writeFileSync(
+    resumePath,
+    JSON.stringify(personalizedResume, undefined, 2),
+  );
 
   console.log(`Your resume has been created at ${resumePath}`);
   console.log('');
@@ -54,3 +67,5 @@ export default async ({ resumePath }) => {
   console.log('Or simply type: `resume export` and follow the prompts.');
   console.log('');
 };
+
+export default init;

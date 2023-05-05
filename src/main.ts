@@ -1,35 +1,41 @@
 #!/usr/bin/env node
 
-import 'dotenv/config';
-
 import init from './init';
-import getResume from './get-resume';
-import getSchema from './get-schema';
+import getResume from './getResume';
+import getSchema from './getSchema';
 import validate from './validate';
+import { version } from './package.json' assert { type: 'json' };
+import exportResume from './exportResume';
+import serve from './serve';
+import { program } from 'commander';
+import chalk from 'chalk';
+import path from 'path';
 
-const pkg = require('../package.json');
-const exportResume = require('./export-resume');
-const serve = require('./serve');
-const program = require('commander');
-const chalk = require('chalk');
-const path = require('path');
+interface ResumeOptions {
+  resume: string;
+  schema: string;
+  theme: string;
+  format: string;
+  port: string;
+  dir: string;
+  silent: string;
+}
 
-const normalizeTheme = (value, defaultValue) => {
-  const theme = value || defaultValue;
-  // TODO - This is not great, but bypasses this function if it is a relative path
+const normalizeTheme = (value: string, defaultValue: string): string => {
+  const theme = value.length > 0 ? value : defaultValue;
   if (theme[0] === '.') {
     return theme;
   }
-  return theme.match('jsonresume-theme-.*')
+  return /jsonresume-theme-.*/.test(theme)
     ? theme
     : `jsonresume-theme-${theme}`;
 };
 
-(async () => {
+void (async () => {
   program
     .name('resume')
     .usage('[command] [options]')
-    .version(pkg.version)
+    .version(version)
     .option(
       '-F, --force',
       'Used by `publish` and `export` - bypasses schema testing.',
@@ -46,7 +52,7 @@ const normalizeTheme = (value, defaultValue) => {
       "path to the resume in json format. Use '-' to read from stdin",
       'resume.json',
     )
-    .option('-p, --port <port>', 'Used by `serve` (default: 4000)', 4000)
+    .option('-p, --port <port>', 'Used by `serve` (default: 4000)', '4000')
     .option(
       '-s, --silent',
       'Used by `serve` to tell it if open browser auto or not.',
@@ -62,26 +68,27 @@ const normalizeTheme = (value, defaultValue) => {
       'Used by `validate` to validate against a custom schema.',
     );
 
+  const opts: ResumeOptions = program.opts();
   program
     .command('init')
     .description('Initialize a resume.json file')
     .action(async () => {
-      await init({ resumePath: program.resume });
+      await init({ resumePath: opts.resume });
     });
 
   program
     .command('validate')
     .description("Validate your resume's schema")
     .action(async () => {
-      const resume = await getResume({ path: program.resume });
-      const schema = await getSchema({ path: program.schema });
+      const resume = await getResume({ path: opts.resume });
+      const schema = await getSchema({ path: opts.schema });
       try {
         await validate({
           resume,
           schema,
         });
       } catch (e) {
-        console.error(e.message);
+        console.error(e);
         process.exitCode = 1;
       }
     });
@@ -92,20 +99,20 @@ const normalizeTheme = (value, defaultValue) => {
       'Export locally to .html or .pdf. Supply a --format <file format> flag and argument to specify export format.',
     )
     .action(async (fileName) => {
-      const resume = await getResume({ path: program.resume });
-      exportResume(
-        { ...program, resume, fileName },
-        (err, fileName, format) => {
-          console.log(
-            chalk.green(
-              '\nDone! Find your new',
-              format,
-              'resume at:\n',
-              path.resolve(process.cwd(), fileName + format),
+      const resume = await getResume({ path: opts.resume });
+      exportResume({ ...opts, resume, fileName }, (_err, fileName, format) => {
+        console.log(
+          chalk.green(
+            '\nDone! Find your new',
+            format,
+            'resume at:\n',
+            path.resolve(
+              process.cwd(),
+              (fileName as string) + (format as string),
             ),
-          );
-        },
-      );
+          ),
+        );
+      });
     });
 
   program
@@ -113,23 +120,15 @@ const normalizeTheme = (value, defaultValue) => {
     .description('Serve resume at http://localhost:4000/')
     .action(async () => {
       serve({
-        ...program,
-        resumeFilename: program.resume,
+        ...opts,
+        resumeFilename: opts.resume,
       });
     });
 
   await program.parseAsync(process.argv);
 
-  const validCommands = program.commands.map((cmd) => {
-    return cmd._name;
-  });
-
-  // https://github.com/tj/commander.js/blob/master/CHANGELOG.md#testing-for-no-arguments
+  // @ts-expect-error rawArgs exists
   if (program.rawArgs.length < 3) {
-    console.log(chalk.cyan('resume-cli:'), 'https://jsonresume.org', '\n');
-    program.help();
-  } else if (validCommands.indexOf(process.argv[2]) === -1) {
-    console.log(chalk.red('Invalid argument:'), process.argv[2]);
     console.log(chalk.cyan('resume-cli:'), 'https://jsonresume.org', '\n');
     program.help();
   }

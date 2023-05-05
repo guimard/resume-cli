@@ -1,5 +1,14 @@
-module.exports = {
-  maxWorkers: 1, // maintains isTTY, since using a single worker will not cause jest to use child processes to run the tests
-  setupFilesAfterEnv: ['jest-extended'],
-  roots: ['<rootDir>/lib'],
+export default {
+  preset: 'ts-jest',
+  testEnvironment: 'node',
+  collectCoverage: true,
+  collectCoverageFrom: ['./src/**/*.ts'],
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 50,
+      lines: 90,
+      statements: 90,
+    },
+  },
 };
